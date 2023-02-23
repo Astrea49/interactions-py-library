@@ -1,10 +1,8 @@
 # Migrating from interactions.py 4.X
 
-Version 5.X and beyond can be considered a major rewrite of the library. It is essentially a new library - a library that still focuses on interactions and Discord bot making, but with major changes to allow for more stability and flexibilty.
+Version 5.X (and beyond) is a major rewrite of interactions.py compared to 4.X, though there have been major improvements to compensate for the change. 5.X was designed to be more stable and flexible, solving many of the bugs and UX issues 4.X had while also adding additional features you may like.
 
-Basically: **you *will* have to update, and likely rewrite, your bot in some fashion.** The changes are too massive to get away with changing only a couple of imports, and you should be prepared to analyze what your code is doing and rewrite it to modern standards.
-
-**This guide does not cover everything.** That simply is not possible - again, v5 is basically a new library, and it's virtually impossible to cover every aspect of two different libraries and how they're different. Read this guide, read on the examples and documentation, and don't be afraid to ask for help in the support server if you need to.
+**You will need to do some updating and rewriting of your code,** but it's not as daunting as it may seem. We've prlovided this document as a starting point (*though it is not exhaustive*), and we have plenty of guides and documentation to help you learn the other parts of this library. Lastly, our support team is always here to help if you need it in our Discord server (TODO link).
 
 Now, let's get started, shall we?
 
@@ -25,7 +23,7 @@ We suggest using [pyenv](https://github.com/pyenv/pyenv) for easy management bet
 
 Slash commands function differently from v4's commands - it's worth taking a good look at the guide to see how they work in the library now (TODO: link to it, I'm on mobile lol).
 
-Big changes include the fact that `@bot.command` (we'll get to extensions later) is now `@interactions.slash_command`, and `CommandContext` is now `InteractionContext`. There may be some slight renamings elsewhere too in the decorators itself - it's suggested you look over the options for the new decorator and approiately adapt your code.
+Big changes include the fact that `@bot.command` (we'll get to extensions later) is now `@interactions.slash_command`, and `CommandContext` is now `SlashContext`. There may be some slight renamings elsewhere too in the decorators itself - it's suggested you look over the options for the new decorator and approiately adapt your code.
 
 Arguably the biggest change involves how v5 handles slash options. v5's primary method relies heavily on decorators to do the heavy lifting, though there are other methods you may prefer - again, consult the guide, as that will tell you every method. A general rule of thumb is that if you did not use the "define options as a list right in the slash command decorator" choice, you will have to make some changes to adjust to the new codebase.
 Subcommands also cannot be defined as an option in a command. We encourage you to use a subcommand decorator instead, as seen in the guide.
@@ -40,15 +38,19 @@ Autodeferring is also pretty similar, although there's more control, with option
 
 These should be a lot more familiar to you - many interactions in v5 that aren't slash commands are similar to v4, minus name changes (largely to the decorators and classes you use). They should still *function* similarly though, but it's never a bad idea to consult the various guides that are on the sidebar to gain a better picture of how they work.
 
-You can use `ActionRow` directly instead of using `ActionRow.new()` now.
+There also is no "one decorator for every type of command" - there is no equivalent to `bot.command`, and you will need to use the more narrowly-scoped alternatives.
+
+Also, you no longer need to use `ActionRow.new(...)` to make an ActionRow now - you can just use `ActionRow(...)` directly.
 
 # WIP - these next sections are not in order of their final appearance
 
 ## Extensions
 
-Honestly, this is mostly the same to most people. `await teardown(...)` is now just `drop(...)` (note how drop is *not* async), and you use `bot.load_extension`/`bot.unload_extension` instead of `bot.load`/`bot.unload`.
+Extensions have not been changed too much. `await teardown(...)` is now just `drop(...)` (note how drop is *not* async), and you use `bot.load_extension`/`bot.unload_extension` instead of `bot.load`/`bot.unload`.
 
-One *major* difference though that isn't fully related to extensions themselves - *you use the same decorator for both commands/events in your main file and commands/events in extensions in v5.* Basically, instead of having `bot.command` and `interactions.extension_command`, you *just* have `interactions.slash_command` (and so on for context menus, events, etc.), which functions seemlessly in both contexts.
+There is one major difference though isn't fully related to extensions themselves - *you use the same decorator for both commands/events in your main file and commands/events in extensions in v5.* Basically, instead of having `bot.command` and `interactions.extension_command`, you *just* have `interactions.slash_command` (and so on for context menus, events, etc.), which functions seemlessly in both contexts.
+
+Also, you no longer require a `setup` function. They can still be used, but if you have no need for them other than just loading the extension, you can get rid of them if you want.
 
 ## Cache and interactions.get
 
@@ -61,9 +63,9 @@ In recent Python versions, `asyncio` has gone through a major change on how it t
 
 What this means to you is that *the `Client` does not have a loop variable, and no `asyncio` loop exists until the bot is started (if you use `bot.start()`).*
 
-For accessing the loop itself, there is [`asyncio.get_running_loop()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.get_running_loop) to, well, get the running loop, though you're probably using the loop to run a task - it's better to use [`asyncio.create_task(...)`](https://docs.python.org/3/library/asyncio-task.html#asyncio.create_task) instead. 
+For accessing the loop itself, there is [`asyncio.get_running_loop()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.get_running_loop) to, well, get the running loop, though you're probably using the loop to run a task - it's better to use [`asyncio.create_task(...)`](https://docs.python.org/3/library/asyncio-task.html#asyncio.create_task) for that instead if you are. 
 
-However, as for the second poont... it shouldn't impact most users, but this may if you use `create_task` to run an asynchronous function before the bot starts - *this including loading in an extension that uses it before the bot is properly started.* Both of the above functions will error out if used, so using them isn't an option.
+However, as for the second point... it shouldn't impact most users, but this may if you use `create_task` to run an asynchronous function before the bot starts - *this including loading in an extension that uses it before the bot is properly started.* Both of the above functions will error out if used, so using them isn't an option.
 
 So what do you do? Simple - create the loop "yourself" and use `bot.astart()` instead!
 
